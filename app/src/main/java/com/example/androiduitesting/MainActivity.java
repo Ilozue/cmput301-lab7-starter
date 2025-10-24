@@ -2,6 +2,7 @@ package com.example.androiduitesting;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -13,56 +14,68 @@ import android.widget.ListView;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-    // Declare the variables so that you will be able to reference it later.
-    ListView cityList;
-    EditText newName;
-    LinearLayout nameField;
-    ArrayAdapter<String> cityAdapter;
-    ArrayList<String> dataList;
+
+    private ListView cityListView;
+    private LinearLayout nameField;     // @id/field_nameEntry
+    private EditText newName;           // @id/editText_name
+    private Button addCityButton;       // @id/button_add
+    private Button confirmButton;       // @id/button_confirm
+    private Button deleteButton;        // @id/button_clear
+
+    private ArrayList<String> cityData;
+    private ArrayAdapter<String> cityAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        nameField = findViewById(R.id.field_nameEntry);
-        newName  = findViewById(R.id.editText_name);
+        // Bind views (IDs taken from your activity_main.xml)
+        cityListView   = findViewById(R.id.city_list);
+        nameField      = findViewById(R.id.field_nameEntry);
+        newName        = findViewById(R.id.editText_name);
+        addCityButton  = findViewById(R.id.button_add);
+        confirmButton  = findViewById(R.id.button_confirm);
+        deleteButton   = findViewById(R.id.button_clear);
 
-        cityList = findViewById(R.id.city_list);
+        // Data + adapter
+        cityData = new ArrayList<>();
+        if (!cityData.contains("Edmonton")) cityData.add("Edmonton"); // match your screenshot
+        cityAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, cityData);
+        cityListView.setAdapter(cityAdapter);
 
-        //String []cities ={"Edmonton", "Vancouver", "Moscow", "Sydney", "Berlin", "Vienna", "Tokyo", "Beijing", "Osaka", "New Delhi"};
+        // Initially hide the name entry row (if you designed it that way)
+        if (nameField != null) nameField.setVisibility(View.GONE);
 
-        dataList = new ArrayList<>();
-
-        //dataList.addAll(Arrays.asList(cities));
-
-        cityAdapter = new ArrayAdapter<>(this, R.layout.content, dataList);
-
-
-        cityList.setAdapter(cityAdapter);
-
-        final Button addButton = findViewById(R.id.button_add);
-        addButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                nameField.setVisibility(View.VISIBLE);
-            }
+        // Add: reveal the entry row
+        addCityButton.setOnClickListener(v -> {
+            if (nameField != null) nameField.setVisibility(View.VISIBLE);
+            newName.requestFocus();
         });
 
-        final Button confirmButton = findViewById(R.id.button_confirm);
-        confirmButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                String cityName = newName.getText().toString();
+        // Confirm: add typed city, clear input, hide entry row
+        confirmButton.setOnClickListener(v -> {
+            String cityName = newName.getText().toString().trim();
+            if (!cityName.isEmpty()) {
                 cityAdapter.add(cityName);
+                cityAdapter.notifyDataSetChanged();
                 newName.getText().clear();
-                nameField.setVisibility(View.INVISIBLE);
+                if (nameField != null) nameField.setVisibility(View.GONE);
             }
         });
 
-        final Button deleteButton = findViewById(R.id.button_clear);
-        deleteButton.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                cityAdapter.clear();
-            }
+        // Clear all
+        deleteButton.setOnClickListener(v -> {
+            cityAdapter.clear();
+            cityAdapter.notifyDataSetChanged();
+        });
+
+        // >>> Lab 7 requirement: click a city to open ShowActivity and display its name
+        cityListView.setOnItemClickListener((parent, view, position, id) -> {
+            String cityName = cityAdapter.getItem(position);
+            Intent intent = new Intent(MainActivity.this, ShowActivity.class);
+            intent.putExtra(ShowActivity.EXTRA_CITY_NAME, cityName);
+            startActivity(intent);
         });
     }
 }
